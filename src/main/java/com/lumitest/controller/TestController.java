@@ -67,14 +67,15 @@ public class TestController {
     public ResponseEntity<String> getReport(@PathVariable String executionId) {
         Execution ex = executionRepo.findById(executionId).orElseThrow();
         StringBuilder report = new StringBuilder();
-        report.append("Test Case Execution Report\n");
-        report.append("Status: ").append(ex.getStatus()).append("\n\n");
+        report.append("BÁO CÁO KẾT QUẢ KIỂM THỬ\n");
+        report.append("Trạng thái tổng quát: ").append(ex.getStatus().equals("PASSED") ? "THÀNH CÔNG" : "THẤT BẠI")
+                .append("\n\n");
 
         if (ex.getStepResults() != null) {
             for (StepResult res : ex.getStepResults()) {
-                report.append("Step ").append(res.getStepOrder())
-                        .append(" ").append(res.getStatus())
-                        .append(" ").append(res.getScreenshotPath()).append("\n");
+                report.append("Bước ").append(res.getStepOrder())
+                        .append(" - ").append(res.getStatus().equals("PASS") ? "ĐẠT" : "KHÔNG ĐẠT")
+                        .append(" - Ảnh bằng chứng: ").append(res.getScreenshotPath()).append("\n");
             }
         }
 
