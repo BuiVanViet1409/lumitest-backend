@@ -24,6 +24,9 @@ public class TestController {
     @Autowired
     private TestExecutionService executionService;
 
+    @Autowired
+    private com.lumitest.automation.TestRecorderService recorderService;
+
     @PostMapping("/testcases")
     public TestCase createTestCase(@RequestBody TestCase testCase) {
         if (testCase.getSteps() == null)
@@ -79,6 +82,31 @@ public class TestController {
             }
         }
 
+        if (ex.getVideoPath() != null) {
+            report.append("\nVideo quay lại: ").append(ex.getVideoPath()).append("\n");
+        }
+
         return ResponseEntity.ok(report.toString());
+    }
+
+    @GetMapping("/video/{executionId}/{filename}")
+    public ResponseEntity<org.springframework.core.io.Resource> getVideo(@PathVariable String executionId,
+            @PathVariable String filename) {
+        try {
+            java.nio.file.Path videoPath = java.nio.file.Paths.get("src/main/resources/static/screenshots", executionId,
+                    filename);
+            org.springframework.core.io.Resource resource = new org.springframework.core.io.UrlResource(
+                    videoPath.toUri());
+            return ResponseEntity.ok()
+                    .contentType(org.springframework.http.MediaType.parseMediaType("video/webm"))
+                    .body(resource);
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @PostMapping("/testcases/record")
+    public List<TestStep> recordTestCase(@RequestParam String url) {
+        return recorderService.recordSteps(url);
     }
 }
