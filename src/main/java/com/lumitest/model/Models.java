@@ -12,6 +12,7 @@ public class TestStep {
     private String action;
     private String selector;
     private String value;
+    private int retryCount = 0; // Mặc định 0: không thử lại
 }
 
 @Data

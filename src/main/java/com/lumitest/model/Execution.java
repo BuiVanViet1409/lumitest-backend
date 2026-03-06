@@ -15,5 +15,6 @@ public class Execution {
     private String status; // PENDING / RUNNING / PASSED / FAILED
     private LocalDateTime startTime;
     private LocalDateTime endTime;
+    private String videoPath; // Đường dẫn đến file video .webm
     private List<StepResult> stepResults;
 }

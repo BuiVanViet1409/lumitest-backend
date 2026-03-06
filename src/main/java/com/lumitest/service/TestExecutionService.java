@@ -20,22 +20,29 @@ public class TestExecutionService {
     @Autowired
     private ExecutionRepository executionRepo;
 
-    @Async
+    @Async("testTaskExecutor")
     public void runTestCase(TestCase testCase, Execution execution) {
         execution.setStatus("RUNNING");
         execution.setStartTime(LocalDateTime.now());
         execution.setStepResults(new ArrayList<>());
         executionRepo.save(execution);
 
+        String videoDir = "src/main/resources/static/screenshots/" + execution.getId();
+
         try (Playwright playwright = Playwright.create()) {
             Browser browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true));
-            Page page = browser.newPage();
+            // Cấu hình quay video
+            BrowserContext context = browser.newContext(new Browser.NewContextOptions()
+                    .setRecordVideoDir(java.nio.file.Paths.get(videoDir))
+                    .setRecordVideoSize(1280, 720));
+
+            Page page = context.newPage();
 
             boolean allPassed = true;
             for (TestStep step : testCase.getSteps()) {
                 StepResult result = engine.executeStep(page, step, execution.getId());
                 execution.getStepResults().add(result);
-                executionRepo.save(execution); // Update progress
+                executionRepo.save(execution);
 
                 if ("FAIL".equals(result.getStatus())) {
                     allPassed = false;
@@ -44,6 +51,12 @@ public class TestExecutionService {
             }
 
             execution.setStatus(allPassed ? "PASSED" : "FAILED");
+
+            // Lấy thông tin video sau khi đóng context
+            context.close();
+            if (page.video() != null) {
+                execution.setVideoPath(page.video().path().getFileName().toString());
+            }
             browser.close();
 
         } catch (Exception e) {
