@@ -20,5 +20,5 @@ public class Execution {
     private LocalDateTime startTime;
     private LocalDateTime endTime;
     private String videoPath; // Đường dẫn đến file video .webm
-    private List<StepResult> stepResults;
+    private String progressMessage; // Log gần nhất để UI hiển thị tiến độ
 }

@@ -18,7 +18,9 @@ public class TestCase {
     private String name;
     private String description;
     private String applicationUrl;
-    private String createdBy;
+    private String scenario;
     private LocalDateTime createdAt = LocalDateTime.now();
-    private List<TestStep> steps;
+
+    @org.springframework.data.annotation.Transient
+    private long stepsCount;
 }

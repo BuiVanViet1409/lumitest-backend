@@ -20,7 +20,12 @@ public class TestRecorderService {
             Page page = browser.newPage();
 
             // Bước đầu tiên luôn là OPEN_URL
-            recordedSteps.add(new TestStep(order.getAndIncrement(), "OPEN_URL", null, url, 0));
+            TestStep openStep = new TestStep();
+            openStep.setOrder(order.getAndIncrement());
+            openStep.setAction("OPEN_URL");
+            openStep.setValue(url);
+            openStep.setRetryCount(0);
+            recordedSteps.add(openStep);
 
             page.navigate(url);
 
@@ -33,7 +38,14 @@ public class TestRecorderService {
                 String value = args.length > 2 ? (String) args[2] : null;
 
                 String action = type.equals("click") ? "CLICK" : "INPUT_TEXT";
-                recordedSteps.add(new TestStep(order.getAndIncrement(), action, selector, value, 0));
+
+                TestStep step = new TestStep();
+                step.setOrder(order.getAndIncrement());
+                step.setAction(action);
+                step.setSelector(selector);
+                step.setValue(value);
+                step.setRetryCount(0);
+                recordedSteps.add(step);
                 return null;
             });
 

@@ -1,3 +1,14 @@
+lumitest:
+  screenshot-path: src/main/resources/static/screenshots
+  browser:
+    type: chromium
+    headless: true
+  timeouts:
+    global: 10000
+    heuristic: 300
+    fallback: 1000
+  max-test-steps: 50
+
 spring:
   data:
     mongodb:
@@ -7,6 +18,3 @@ spring:
       pool:
         core-size: 5
         max-size: 10
-
-storage:
-  location: src/main/resources/static/screenshots
