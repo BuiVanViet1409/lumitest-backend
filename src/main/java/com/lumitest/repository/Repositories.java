@@ -1,21 +1,12 @@
 package com.lumitest.repository;
 
-import com.lumitest.entity.*;
-import org.springframework.data.jpa.repository.JpaRepository;
+import com.lumitest.model.TestCase;
+import com.lumitest.model.Execution;
+import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-interface TestCaseRepository extends JpaRepository<TestCase, Long> {
-}
+public interface TestCaseRepository extends MongoRepository<TestCase, String> {}
 
 @Repository
-interface TestStepRepository extends JpaRepository<TestStep, Long> {
-}
-
-@Repository
-interface TestExecutionRepository extends JpaRepository<TestExecution, Long> {
-}
-
-@Repository
-interface StepResultRepository extends JpaRepository<StepResult, Long> {
-}
+public interface ExecutionRepository extends MongoRepository<Execution, String> {}

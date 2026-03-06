@@ -1,19 +1,20 @@
 package com.lumitest.automation;
 
 import com.microsoft.playwright.*;
-import com.lumitest.entity.TestStep;
-import com.lumitest.entity.StepResult;
+import com.lumitest.model.TestStep;
+import com.lumitest.model.StepResult;
 import org.springframework.stereotype.Service;
 
+import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.UUID;
 
 @Service
 public class PlaywrightAutomationEngine {
 
-    public StepResult executeStep(Page page, TestStep step, String screenshotDir) {
+    public StepResult executeStep(Page page, TestStep step, String executionId) {
         StepResult result = new StepResult();
-        result.setStep(step);
+        result.setStepOrder(step.getOrder());
 
         try {
             switch (step.getAction().toUpperCase()) {
@@ -52,14 +53,17 @@ public class PlaywrightAutomationEngine {
             result.setErrorMessage(e.getMessage());
         }
 
+        // Capture screenshot
         try {
-            String screenshotName = UUID.randomUUID().toString() + ".png";
-            java.nio.file.Files.createDirectories(Paths.get(screenshotDir));
+            String screenshotDir = "screenshots/" + executionId;
+            String screenshotName = "step-" + step.getOrder() + "-" + UUID.randomUUID().toString().substring(0, 8)
+                    + ".png";
+            Files.createDirectories(Paths.get(screenshotDir));
             String fullPath = Paths.get(screenshotDir, screenshotName).toString();
             page.screenshot(new Page.ScreenshotOptions().setPath(Paths.get(fullPath)));
-            result.setScreenshotPath(screenshotName);
+            result.setScreenshotPath(fullPath);
         } catch (Exception e) {
-            // Log screenshot error
+            // Silently fail screenshot capture
         }
 
         return result;

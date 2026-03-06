@@ -1,12 +1,14 @@
 package com.lumitest.controller;
 
-import com.lumitest.entity.*;
+import com.lumitest.model.*;
 import com.lumitest.repository.TestCaseRepository;
+import com.lumitest.repository.ExecutionRepository;
 import com.lumitest.service.TestExecutionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -17,10 +19,15 @@ public class TestController {
     private TestCaseRepository testCaseRepo;
 
     @Autowired
+    private ExecutionRepository executionRepo;
+
+    @Autowired
     private TestExecutionService executionService;
 
     @PostMapping("/testcases")
     public TestCase createTestCase(@RequestBody TestCase testCase) {
+        if (testCase.getSteps() == null)
+            testCase.setSteps(new ArrayList<>());
         return testCaseRepo.save(testCase);
     }
 
@@ -29,17 +36,48 @@ public class TestController {
         return testCaseRepo.findAll();
     }
 
+    @PostMapping("/testcases/{id}/steps")
+    public TestCase addSteps(@PathVariable String id, @RequestBody List<TestStep> steps) {
+        TestCase tc = testCaseRepo.findById(id).orElseThrow();
+        tc.getSteps().addAll(steps);
+        return testCaseRepo.save(tc);
+    }
+
     @PostMapping("/executions/run/{testCaseId}")
-    public ResponseEntity<String> runTest(@PathVariable Long testCaseId) {
+    public ResponseEntity<Execution> runTest(@PathVariable String testCaseId) {
         TestCase testCase = testCaseRepo.findById(testCaseId)
                 .orElseThrow(() -> new RuntimeException("Test case not found"));
 
-        TestExecution execution = new TestExecution();
-        execution.setTestCase(testCase);
+        Execution execution = new Execution();
+        execution.setTestCaseId(testCaseId);
         execution.setStatus("PENDING");
+        execution = executionRepo.save(execution);
 
-        executionService.runTestCase(execution);
+        executionService.runTestCase(testCase, execution);
 
-        return ResponseEntity.ok("Execution started for test case: " + testCase.getName());
+        return ResponseEntity.ok(execution);
+    }
+
+    @GetMapping("/executions/{executionId}")
+    public Execution getExecution(@PathVariable String executionId) {
+        return executionRepo.findById(executionId).orElseThrow();
+    }
+
+    @GetMapping("/executions/{executionId}/report")
+    public ResponseEntity<String> getReport(@PathVariable String executionId) {
+        Execution ex = executionRepo.findById(executionId).orElseThrow();
+        StringBuilder report = new StringBuilder();
+        report.append("Test Case Execution Report\n");
+        report.append("Status: ").append(ex.getStatus()).append("\n\n");
+
+        if (ex.getStepResults() != null) {
+            for (StepResult res : ex.getStepResults()) {
+                report.append("Step ").append(res.getStepOrder())
+                        .append(" ").append(res.getStatus())
+                        .append(" ").append(res.getScreenshotPath()).append("\n");
+            }
+        }
+
+        return ResponseEntity.ok(report.toString());
     }
 }

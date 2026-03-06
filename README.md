@@ -1,44 +1,83 @@
-# LumiTest Backend - Automated Testing Tool
+# LumiTest - Automated Testing Platform (MongoDB Edition)
 
-Phần Backend của hệ thống LumiTest, được xây dựng bằng Spring Boot và Playwright.
+## 1. System Overview
 
-## 1. Yêu cầu hệ thống
+LumiTest is a web-based QA automation platform that allows QA engineers to create and execute test cases without writing code. It uses Playwright for browser automation and MongoDB for persistent storage of test definitions and execution results.
+
+## 2. Prerequisites
 
 - **Java 17**
-- **Maven 3.8+**
-- **PostgreSQL 14+**
+- **Maven**
+- **MongoDB** (Local or Remote)
+- **Node.js** (Required for Playwright browsers)
 
-## 2. Cấu hình (YAML)
+## 3. Install MongoDB
 
-Project sử dụng file `src/main/resources/application.yml`. Bạn hãy cập nhật thông tin database tại đây:
-
-```yaml
-spring:
-  datasource:
-    url: jdbc:postgresql://localhost:5432/lumitest
-    username: your_username
-    password: your_password
-```
-
-## 3. Cài đặt ban đầu
-
-Sau khi clone project, bạn cần cài đặt Playwright và các trình duyệt:
+If you don't have MongoDB installed, you can download it from [MongoDB Community Server](https://www.mongodb.com/try/download/community).
+Start MongoDB with:
 
 ```bash
+mongod
+```
+
+## 4. Install NodeJS & Playwright Browsers
+
+To install the necessary browser binaries for Playwright:
+
+```bash
+# Install NodeJS from nodejs.org
+# Then run:
 mvn exec:java -e -D exec.mainClass=com.microsoft.playwright.CLI -D exec.args="install"
 ```
 
-## 4. Cách chạy
+## 5. Run Spring Boot
 
 ```bash
+# Install dependencies
+mvn clean install
+
+# Run the application
 mvn spring-boot:run
 ```
 
-API sẽ lắng nghe tại: `http://localhost:8080`
+The application will start at `http://localhost:8080`.
 
-## 5. Chức năng chính
+## 6. Run Test Execution
 
-- Quản lý Test Cases & Test Steps.
-- Tự động thực thi test qua Playwright.
-- Tự động chụp ảnh màn hình mỗi bước (`src/main/resources/static/screenshots`).
-- API cung cấp dữ liệu cho Frontend React.
+1. Create a Test Case via API or UI.
+2. Trigger the execution using the `run` endpoint.
+3. Screenshots will be saved in `/screenshots/{executionId}/`.
+
+## 7. Example API Requests
+
+### Create Test Case
+
+`POST /api/testcases`
+
+```json
+{
+  "name": "Login Test",
+  "applicationUrl": "https://example.com/login",
+  "steps": [
+    {
+      "order": 1,
+      "action": "OPEN_URL",
+      "value": "https://example.com/login"
+    },
+    {
+      "order": 2,
+      "action": "INPUT_TEXT",
+      "selector": "#username",
+      "value": "admin"
+    }
+  ]
+}
+```
+
+### Run Test Case
+
+`POST /api/executions/run/{testCaseId}`
+
+### Get Report
+
+`GET /api/executions/{executionId}/report`
