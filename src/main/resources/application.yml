@@ -1,0 +1,17 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/lumitest
+    username: postgres
+    password: password
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+  task:
+    execution:
+      pool:
+        core-size: 5
+        max-size: 10
+
+storage:
+  location: src/main/resources/static/screenshots
