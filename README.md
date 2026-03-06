@@ -2,7 +2,19 @@
 
 ## 1. Tổng quan hệ thống
 
-LumiTest là một nền tảng tự động hóa QA dựa trên web, cho phép các kỹ sư QA tạo và thực thi các kịch bản kiểm thử (test cases) mà không cần viết mã. Hệ thống sử dụng Playwright để tự động hóa trình duyệt và MongoDB để lưu trữ các định nghĩa kiểm thử và kết quả thực thi.
+LumiTest là một nền tảng tự động hóa QA dựa trên web. Hệ thống sử dụng Playwright để tự động hóa trình duyệt và MongoDB để lưu trữ dữ liệu.
+
+### ⚡ Cách chạy nhanh nhất (Dùng Docker Compose)
+
+Nếu bạn đã cài đặt Docker, bạn có thể khởi chạy toàn bộ hệ thống chỉ bằng một lệnh:
+
+```bash
+docker-compose up --build
+```
+
+- **Frontend**: http://localhost (Cổng 80)
+- **Backend**: http://localhost:8080
+- **MongoDB**: http://localhost:27017
 
 ## 2. Yêu cầu hệ thống
 
