@@ -10,5 +10,6 @@ public class RecorderEvent {
     private String text;
     private String value;
     private String href;
+    private String selector;
     private Map<String, String> attributes;
 }

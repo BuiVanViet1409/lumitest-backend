@@ -57,29 +57,14 @@ public class RecorderService {
                     return null;
                 });
 
-                // Inject recording script
-                page.addInitScript("window.addEventListener('click', e => {" +
-                        "  const el = e.target;" +
-                        "  const attrs = {};" +
-                        "  for (const attr of el.attributes) { attrs[attr.name] = attr.value; }" +
-                        "  recorderPostEvent({" +
-                        "    action: 'CLICK'," +
-                        "    tagName: el.tagName.toLowerCase()," +
-                        "    text: el.innerText.substring(0, 50)," +
-                        "    attributes: attrs" +
-                        "  });" +
-                        "}, true);" +
-                        "window.addEventListener('input', e => {" +
-                        "  const el = e.target;" +
-                        "  const attrs = {};" +
-                        "  for (const attr of el.attributes) { attrs[attr.name] = attr.value; }" +
-                        "  recorderPostEvent({" +
-                        "    action: 'INPUT'," +
-                        "    tagName: el.tagName.toLowerCase()," +
-                        "    value: el.value," +
-                        "    attributes: attrs" +
-                        "  });" +
-                        "}, true);");
+                // Inject sophisticated recording script covering all components
+                try {
+                    byte[] scriptBytes = new org.springframework.core.io.ClassPathResource("recorder.js")
+                            .getInputStream().readAllBytes();
+                    page.addInitScript(new String(scriptBytes, java.nio.charset.StandardCharsets.UTF_8));
+                } catch (Exception e) {
+                    log.error("Failed to load recorder.js", e);
+                }
 
                 page.navigate(targetUrl);
 
@@ -140,6 +125,7 @@ public class RecorderService {
     private RecorderEvent convertToEvent(Map<String, Object> data) {
         RecorderEvent event = new RecorderEvent();
         event.setAction((String) data.get("action"));
+        event.setSelector((String) data.get("selector"));
         event.setTagName((String) data.get("tagName"));
         event.setText((String) data.get("text"));
         event.setValue((String) data.get("value"));

@@ -42,6 +42,19 @@ public class AutomationRunnerService {
                     case TestConstants.Action.CLICK:
                         smartClick(page, step.getSelector());
                         break;
+                    case TestConstants.Action.CHECKBOX_TOGGLE:
+                        if (Boolean.parseBoolean(step.getValue())) {
+                            page.check(step.getSelector());
+                        } else {
+                            page.uncheck(step.getSelector());
+                        }
+                        break;
+                    case TestConstants.Action.SELECT_DROPDOWN:
+                        page.selectOption(step.getSelector(), step.getValue());
+                        break;
+                    case TestConstants.Action.FILE_UPLOAD:
+                        page.setInputFiles(step.getSelector(), Paths.get(step.getValue()));
+                        break;
                     case TestConstants.Action.WAIT:
                         try {
                             page.waitForTimeout(Double.parseDouble(step.getValue()));
@@ -50,12 +63,34 @@ public class AutomationRunnerService {
                         }
                         break;
                     case TestConstants.Action.ASSERT_TEXT:
-                        // Chờ phần tử xuất hiện và chứa đúng text mới assert để screenshot bắt được
-                        // đúng màn hình thành công
+                    case TestConstants.Action.VERIFY_TEXT:
                         page.waitForCondition(() -> {
                             String content = page.textContent(step.getSelector());
                             return content != null && content.toLowerCase().contains(step.getValue().toLowerCase());
                         }, new Page.WaitForConditionOptions().setTimeout(config.getTimeouts().getFallback()));
+                        break;
+                    case TestConstants.Action.VERIFY_VISIBLE:
+                        Locator loc = page.locator(step.getSelector());
+                        loc.waitFor(new Locator.WaitForOptions()
+                                .setState(com.microsoft.playwright.options.WaitForSelectorState.VISIBLE)
+                                .setTimeout(config.getTimeouts().getFallback()));
+                        break;
+                    case TestConstants.Action.VERIFY_ELEMENT_EXISTS:
+                        if (page.locator(step.getSelector()).count() == 0) {
+                            throw new Exception("Verification failed: Element does not exist");
+                        }
+                        break;
+                    case TestConstants.Action.VERIFY_VALUE:
+                        String val = page.inputValue(step.getSelector());
+                        if (val == null || !val.equals(step.getValue())) {
+                            throw new Exception(
+                                    "Verification failed: Expected '" + step.getValue() + "' but got '" + val + "'");
+                        }
+                        break;
+                    case TestConstants.Action.VERIFY_URL_CONTAINS:
+                        if (!page.url().contains(step.getValue())) {
+                            throw new Exception("Verification failed: URL does not contain '" + step.getValue() + "'");
+                        }
                         break;
                     default:
                         throw new UnsupportedOperationException("Action not supported: " + step.getAction());
@@ -79,16 +114,15 @@ public class AutomationRunnerService {
             // Chờ trang ổn định sâu (Network Idle) để screenshot bắt được trạng thái cuối
             // cùng sau khi chuyển trang
             try {
-                // Ưu tiên đợi network rảnh tay (đặc biệt sau login/click)
+                // Tăng timeout lên 5s cho các Dashboard nặng như Facebook kịp render
                 page.waitForLoadState(com.microsoft.playwright.options.LoadState.NETWORKIDLE,
-                        new Page.WaitForLoadStateOptions().setTimeout(2000));
+                        new Page.WaitForLoadStateOptions().setTimeout(5000));
 
-                // Thêm 1 giây settle time cứng để bắt các hiệu ứng render cuối cùng
-                page.waitForTimeout(1000);
+                // Thêm 3 giây settle time cứng để bắt các hiệu ứng render cuối cùng
+                page.waitForTimeout(3000);
             } catch (Exception e) {
-                // Nếu network không idle kịp trong 2s thì cũng chụp ảnh luôn để không block
-                // tiến trình
-                log.debug("Network didn't reach idle state within 2s, proceeding with screenshot.");
+                // Nếu network không idle kịp trong 5s thì cũng chụp ảnh luôn
+                log.debug("Network didn't reach idle state within 5s, proceeding with screenshot.");
             }
 
             String screenshotDir = PathUtils.getExecutionDir(config.getScreenshotPath(), executionId);

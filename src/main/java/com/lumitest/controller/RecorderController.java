@@ -14,17 +14,17 @@ public class RecorderController {
     private RecorderService recorderService;
 
     @PostMapping("/start")
-    public RecordingSession start(@RequestParam String url) {
+    public RecordingSession start(@RequestParam("url") String url) {
         return recorderService.start(url);
     }
 
     @PostMapping("/stop")
-    public RecordingSession stop(@RequestParam String sessionId, @RequestParam String name) {
+    public RecordingSession stop(@RequestParam("sessionId") String sessionId, @RequestParam("name") String name) {
         return recorderService.stop(sessionId, name);
     }
 
     @GetMapping("/session/{sessionId}")
-    public RecordingSession getSession(@PathVariable String sessionId) {
+    public RecordingSession getSession(@PathVariable("sessionId") String sessionId) {
         return recorderService.getSession(sessionId);
     }
 }
