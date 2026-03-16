@@ -16,8 +16,11 @@ public class TestStep {
     private String id;
     private String testCaseId;
     private int order;
-    private String action;
-    private String selector;
-    private String value;
+    private String description;
+    private String testData;
+    private String expectedResult;
+    private String verificationType; // UI, API, DATABASE, MESSAGE
+    private String verificationRule; // CONFIG
+    private String status = "NOT_RUN";
     private int retryCount = 0;
 }

@@ -9,4 +9,6 @@ import java.util.Optional;
 @Repository
 public interface ExecutionRepository extends MongoRepository<Execution, String> {
     Optional<Execution> findFirstByTestCaseIdOrderByStartTimeDesc(String testCaseId);
+
+    void deleteByTestCaseId(String testCaseId);
 }

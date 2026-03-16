@@ -1,10 +1,19 @@
 package com.lumitest.service;
 
-import com.microsoft.playwright.*;
+import com.microsoft.playwright.Playwright;
+import com.microsoft.playwright.Browser;
+import com.microsoft.playwright.BrowserContext;
+import com.microsoft.playwright.BrowserType;
+import com.microsoft.playwright.Page;
 import com.lumitest.automation.AutomationRunnerService;
-import com.lumitest.model.*;
-import com.lumitest.repository.*;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.lumitest.model.TestCase;
+import com.lumitest.model.Execution;
+import com.lumitest.model.TestStep;
+import com.lumitest.model.ExecutionStep;
+import com.lumitest.repository.ExecutionRepository;
+import com.lumitest.repository.ExecutionStepRepository;
+import com.lumitest.repository.TestStepRepository;
+import com.lumitest.config.LumiTestConfig;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -13,26 +22,23 @@ import java.util.List;
 import com.lumitest.constant.TestConstants;
 import com.lumitest.util.PathUtils;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class ExecutionService {
 
-    @Autowired
-    private AutomationRunnerService runner;
+    private final AutomationRunnerService runner;
 
-    @Autowired
-    private ExecutionRepository executionRepo;
+    private final ExecutionRepository executionRepo;
 
-    @Autowired
-    private ExecutionStepRepository executionStepRepo;
+    private final ExecutionStepRepository executionStepRepo;
 
-    @Autowired
-    private TestStepRepository testStepRepo;
+    private final TestStepRepository testStepRepo;
 
-    @Autowired
-    private com.lumitest.config.LumiTestConfig config;
+    private final LumiTestConfig config;
 
     @Async("testTaskExecutor")
     public void runTest(TestCase testCase, Execution execution) {
@@ -61,12 +67,10 @@ public class ExecutionService {
             boolean allPassed = true;
 
             log.info("🚀 Starting test execution for: {}", testCase.getName());
-            log.info("🌐 Target URL: {}", testCase.getApplicationUrl());
 
             for (int i = 0; i < steps.size(); i++) {
                 TestStep step = steps.get(i);
-                String msg = "Step " + (i + 1) + "/" + steps.size() + ": " + step.getAction() + " ["
-                        + step.getSelector() + "]";
+                String msg = "Step " + (i + 1) + "/" + steps.size() + ": " + step.getDescription();
                 log.info("👉 {}", msg);
 
                 execution.setProgressMessage(msg);
@@ -75,7 +79,7 @@ public class ExecutionService {
                 ExecutionStep execStep = runner.executeStep(page, step, execution.getId());
                 executionStepRepo.save(execStep);
 
-                if (TestConstants.Status.FAIL.equals(execStep.getStatus())) {
+                if (TestConstants.Status.FAILED.equals(execStep.getStatus())) {
                     log.error("❌ Step FAILED: {}", execStep.getErrorMessage());
                     allPassed = false;
                     break;

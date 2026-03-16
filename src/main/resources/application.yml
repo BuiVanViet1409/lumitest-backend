@@ -3,11 +3,23 @@ lumitest:
   browser:
     type: chromium
     headless: true
+  recorder:
+    # Trình duyệt sử dụng để record (msedge, chrome)
+    browser: msedge
+    # Thư mục lưu trữ session (cookies, localStorage)
+    session-path: automation/sessions/qc-session
+    # Độ trễ giữa các hành động khi record (mili giây)
+    delay-ms: 50
+    # Chế độ chạy ngầm (false: hiện trình duyệt, true: ẩn trình duyệt)
+    headless: false
   timeouts:
     global: 10000
     heuristic: 300
     fallback: 1000
   max-test-steps: 50
+  ai:
+    api-key: AIzaSyBTi2Czu56p54WaQSxsH-Lb9_pLyJXSnj4
+    model: gemini-flash-latest
 
 spring:
   data:

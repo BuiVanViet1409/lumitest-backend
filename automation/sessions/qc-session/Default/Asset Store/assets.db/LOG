@@ -1,0 +1,5 @@
+2026/03/10-11:19:36.228 67cc Reusing MANIFEST D:\JAVA\lumitest-backend\automation\sessions\qc-session\Default\Asset Store\assets.db/MANIFEST-000001
+2026/03/10-11:19:36.410 67cc Recovering log #3
+2026/03/10-11:19:36.577 67cc Level-0 table #3: started
+2026/03/10-11:19:36.632 67cc Level-0 table #3: 338950 bytes OK
+2026/03/10-11:19:36.783 67cc Delete type=0 #3

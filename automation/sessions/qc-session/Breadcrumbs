@@ -1,0 +1,49 @@
+0:00:02 Tab2 FinishNav3
+0:00:03 Tab2 StartNav4 #google #renderer-script #link
+0:00:03 Tab2 FinishNav4
+0:00:03 Tab2 PageLoad #google
+0:00:04 Tab2 StartNav5 #google #renderer-script #link
+0:00:04 Tab2 FinishNav5
+0:00:28 Widget Closed: StatusBubble
+0:00:58 Microsoft.Shutdown.TabStripModel.CloseWebContentsAt
+0:00:58 Microsoft.Shutdown.TabStripModel.CloseTabs
+0:00:58 Microsoft.Shutdown.TabStripModel.InternalCloseTabsImpl
+0:00:58 Microsoft.Shutdown.TabStripModel.InternalCloseTabsImpl_TabClosable
+0:00:58 Microsoft.Shutdown.TabStripModel.InternalCloseTabsImpl_NotClosingAll
+0:00:58 Microsoft.Shutdown.TabStripModel.CloseWebContentses
+0:00:58 Microsoft.Shutdown.TabStripModel.CloseWebContentses_FastShutdown
+0:00:58 Microsoft.Shutdown.TabStripModel.ShouldRunUnloadListenerBeforeClosing_false
+0:00:58 Microsoft.Shutdown.TabStripModel.RunUnloadListenerBeforeClosing_false
+0:00:58 Microsoft.Shutdown.TabStripModel.InternalCloseTabsImpl_ClosedAll
+0:00:58 Microsoft.Shutdown.TabStripModel.SendDetachWebContentsNotifications
+0:00:58 Browser1 Close Tab2 at 1
+0:00:58 Tab2 RemoveInfobar73 #not-animated
+0:00:58 Tab2 WebContentsDestroyed
+0:01:33 Tab3 StartNav6 #auto_toplevel
+0:01:33 Browser1 Insert active Tab3 at 1
+0:01:33 Tab3 AddInfobar73
+0:01:33 Tab3 FinishNav6
+0:01:33 Tab3 PageLoad
+0:01:33 Tab3 StartNav7 #google #typed
+0:01:33 Tab3 RemoveInfobar73
+0:01:33 Tab3 AddInfobar73
+0:01:33 Tab3 FinishNav7
+0:01:33 Tab3 StartNav8 #google #renderer-script #link
+0:01:33 Tab3 FinishNav8
+0:01:34 Tab3 PageLoad #google
+0:01:50 Widget Closed: StatusBubble
+0:01:51 Microsoft.Shutdown.TabStripModel.CloseWebContentsAt
+0:01:51 Microsoft.Shutdown.TabStripModel.CloseTabs
+0:01:51 Microsoft.Shutdown.TabStripModel.InternalCloseTabsImpl
+0:01:51 Microsoft.Shutdown.TabStripModel.InternalCloseTabsImpl_TabClosable
+0:01:51 Microsoft.Shutdown.TabStripModel.InternalCloseTabsImpl_NotClosingAll
+0:01:51 Microsoft.Shutdown.TabStripModel.CloseWebContentses
+0:01:51 Microsoft.Shutdown.TabStripModel.CloseWebContentses_FastShutdown
+0:01:51 Microsoft.Shutdown.TabStripModel.ShouldRunUnloadListenerBeforeClosing_false
+0:01:51 Microsoft.Shutdown.TabStripModel.RunUnloadListenerBeforeClosing_false
+0:01:51 Microsoft.Shutdown.TabStripModel.InternalCloseTabsImpl_ClosedAll
+0:01:51 Microsoft.Shutdown.TabStripModel.SendDetachWebContentsNotifications
+0:01:51 Browser1 Close Tab3 at 1
+0:01:51 Tab3 RemoveInfobar73 #not-animated
+0:01:51 Tab3 WebContentsDestroyed
+0:05:17 Microsoft.UnloadController.IsUnclosableApp_IsNotWebApp

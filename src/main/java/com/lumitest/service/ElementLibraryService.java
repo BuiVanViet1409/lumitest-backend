@@ -3,17 +3,17 @@ package com.lumitest.service;
 import com.lumitest.model.SavedElement;
 import com.lumitest.repository.ElementLibraryRepository;
 import com.lumitest.util.HeuristicUtils;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
 public class ElementLibraryService {
 
-    @Autowired
-    private ElementLibraryRepository repository;
+    private final ElementLibraryRepository repository;
 
     public void saveElement(String url, String label, String selector) {
         if (label == null || label.isEmpty() || selector == null || selector.isEmpty())

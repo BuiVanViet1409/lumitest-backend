@@ -1,7 +1,10 @@
 package com.lumitest.automation;
 
 import com.lumitest.model.TestStep;
-import com.microsoft.playwright.*;
+import com.microsoft.playwright.Playwright;
+import com.microsoft.playwright.Browser;
+import com.microsoft.playwright.BrowserType;
+import com.microsoft.playwright.Page;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -22,16 +25,14 @@ public class TestRecorderService {
             // Bước đầu tiên luôn là OPEN_URL
             TestStep openStep = new TestStep();
             openStep.setOrder(order.getAndIncrement());
-            openStep.setAction("OPEN_URL");
-            openStep.setValue(url);
-            openStep.setRetryCount(0);
+            openStep.setDescription("Navigate to URL");
+            openStep.setTestData(url);
+            openStep.setVerificationType("UI");
             recordedSteps.add(openStep);
 
             page.navigate(url);
 
             // Lắng nghe các sự kiện cơ bản (Click và Input)
-            // Lưu ý: Đây là phiên bản đơn giản hóa. Thực tế sẽ cần JS injection phức tạp
-            // hơn.
             page.exposeFunction("recordEvent", (args) -> {
                 String type = (String) args[0];
                 String selector = (String) args[1];
@@ -41,10 +42,10 @@ public class TestRecorderService {
 
                 TestStep step = new TestStep();
                 step.setOrder(order.getAndIncrement());
-                step.setAction(action);
-                step.setSelector(selector);
-                step.setValue(value);
-                step.setRetryCount(0);
+                step.setDescription(action + " on " + selector);
+                step.setTestData(value);
+                step.setExpectedResult("Check " + action);
+                step.setVerificationType("UI");
                 recordedSteps.add(step);
                 return null;
             });

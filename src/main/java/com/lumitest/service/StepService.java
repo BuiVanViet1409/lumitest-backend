@@ -2,14 +2,15 @@ package com.lumitest.service;
 
 import com.lumitest.model.TestStep;
 import com.lumitest.repository.TestStepRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class StepService {
-    @Autowired
-    private TestStepRepository stepRepo;
+    private final TestStepRepository stepRepo;
 
     public List<TestStep> getStepsByTestCase(String testCaseId) {
         return stepRepo.findByTestCaseIdOrderByOrderAsc(testCaseId);

@@ -1,0 +1,6 @@
+2026/03/10-11:19:36.524 3f38 Reusing MANIFEST D:\JAVA\lumitest-backend\automation\sessions\qc-session\Default\EdgeCoupons/coupons_data.db/MANIFEST-000001
+2026/03/10-11:19:36.525 3f38 Recovering log #4
+2026/03/10-11:19:36.526 3f38 Reusing old log D:\JAVA\lumitest-backend\automation\sessions\qc-session\Default\EdgeCoupons/coupons_data.db/000004.log 
+2026/03/10-11:19:37.114 667c Level-0 table #8: started
+2026/03/10-11:19:37.121 667c Level-0 table #8: 681700 bytes OK
+2026/03/10-11:19:37.124 667c Delete type=0 #4

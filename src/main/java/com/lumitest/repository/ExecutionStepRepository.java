@@ -8,4 +8,6 @@ import java.util.List;
 @Repository
 public interface ExecutionStepRepository extends MongoRepository<ExecutionStep, String> {
     List<ExecutionStep> findByExecutionIdOrderByStepOrderAsc(String executionId);
+
+    void deleteByExecutionId(String executionId);
 }

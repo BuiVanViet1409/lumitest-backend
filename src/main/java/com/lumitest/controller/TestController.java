@@ -1,46 +1,69 @@
 package com.lumitest.controller;
 
-import com.lumitest.model.*;
-import com.lumitest.service.*;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.lumitest.model.TestCase;
+import com.lumitest.model.TestStep;
+import com.lumitest.model.Execution;
+import com.lumitest.model.ExecutionStep;
+import com.lumitest.service.TestCaseService;
+import com.lumitest.service.StepService;
+import com.lumitest.service.ExecutionService;
+import com.lumitest.service.ScenarioConverterService;
+import com.lumitest.repository.ExecutionRepository;
+import com.lumitest.repository.ExecutionStepRepository;
+import com.lumitest.automation.TestRecorderService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.http.MediaType;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.PathVariable;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api")
+@RequiredArgsConstructor
+@Slf4j
 public class TestController {
 
-    private static final Logger logger = LoggerFactory.getLogger(TestController.class);
-
-    @Autowired
-    private TestCaseService testCaseService;
-
-    @Autowired
-    private StepService stepService;
-
-    @Autowired
-    private ExecutionService executionService;
-
-    @Autowired
-    private com.lumitest.repository.ExecutionRepository executionRepo;
-
-    @Autowired
-    private com.lumitest.repository.ExecutionStepRepository executionStepRepo;
-
-    @Autowired
-    private com.lumitest.automation.TestRecorderService recorderService;
-
-    @Autowired
-    private ScenarioConverterService scenarioConverter;
+    private final TestCaseService testCaseService;
+    private final StepService stepService;
+    private final ExecutionService executionService;
+    private final ExecutionRepository executionRepo;
+    private final ExecutionStepRepository executionStepRepo;
+    private final TestRecorderService recorderService;
+    private final ScenarioConverterService scenarioConverter;
 
     // --- TEST CASES ---
     @GetMapping("/testcases")
-    public List<TestCase> getAllTestCases() {
-        return testCaseService.getAll();
+    public Page<TestCase> getAllTestCases(
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size,
+            @RequestParam(name = "folder", required = false) String folder) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
+        return testCaseService.getAllPaged(pageable, folder);
+    }
+
+    @GetMapping("/folders")
+    public List<String> getFolders() {
+        return testCaseService.getAllFolders();
     }
 
     @PostMapping("/testcases")
@@ -50,9 +73,10 @@ public class TestController {
 
     @PostMapping("/testcases/{id}/generate")
     public List<TestStep> generateSteps(@PathVariable("id") String id) {
-        logger.info("Generating test steps for test case ID: {}", id);
+        log.info("Generating test steps for test case ID: {}", id);
         TestCase tc = testCaseService.getById(id);
-        List<TestStep> steps = scenarioConverter.convert(tc.getScenario(), tc.getApplicationUrl());
+        // Scenario converter may need adjustment or we use tc.getPreconditions() if it contains URL
+        List<TestStep> steps = scenarioConverter.convert(tc.getScenario(), null);
         steps.forEach(s -> s.setTestCaseId(id));
         stepService.saveAll(steps);
         return steps;
@@ -60,34 +84,41 @@ public class TestController {
 
     @PostMapping("/testcases/record")
     public List<TestStep> recordTestCase(@RequestParam("url") String url) {
-        logger.info("Recording test case for URL: {}", url);
+        log.info("Recording test case for URL: {}", url);
         return recorderService.recordSteps(url);
     }
 
     @PutMapping("/testcases/{id}")
     public TestCase updateTestCase(@PathVariable("id") String id, @RequestBody TestCase testCase) {
-        logger.info("Updating test case ID: {}", id);
+        log.info("Updating test case ID: {}", id);
         testCase.setId(id);
         return testCaseService.save(testCase);
     }
 
     @DeleteMapping("/testcases/{id}")
     public ResponseEntity<Void> deleteTestCase(@PathVariable("id") String id) {
-        logger.info("Deleting test case ID: {}", id);
+        log.info("Deleting test case ID: {}", id);
         testCaseService.delete(id);
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/testcases/bulk")
+    public ResponseEntity<Void> deleteBulkTestCases(@RequestBody List<String> ids) {
+        log.info("Bulk deleting {} test cases", ids.size());
+        testCaseService.deleteAllByIds(ids);
         return ResponseEntity.ok().build();
     }
 
     // --- STEPS ---
     @GetMapping("/testcases/{id}/steps")
     public List<TestStep> getSteps(@PathVariable("id") String id) {
-        logger.info("Fetching steps for test case ID: {}", id);
+        log.info("Fetching steps for test case ID: {}", id);
         return stepService.getStepsByTestCase(id);
     }
 
     @PostMapping("/testcases/{id}/steps")
     public List<TestStep> addSteps(@PathVariable("id") String id, @RequestBody List<TestStep> steps) {
-        logger.info("Saving {} steps for test case ID: {}", steps.size(), id);
+        log.info("Saving {} steps for test case ID: {}", steps.size(), id);
         // Xóa hết bước cũ của kịch bản này trước khi lưu bộ mới
         stepService.deleteAllByTestCaseId(id);
 
@@ -111,7 +142,7 @@ public class TestController {
     // --- EXECUTION ---
     @PostMapping("/testcases/{id}/run")
     public ResponseEntity<Execution> runTest(@PathVariable("id") String id) {
-        logger.info("Running test case ID: {}", id);
+        log.info("Running test case ID: {}", id);
         TestCase testCase = testCaseService.getById(id);
 
         Execution execution = new Execution();
@@ -125,17 +156,21 @@ public class TestController {
     }
 
     @GetMapping("/testcases/{id}/latest-execution")
-    public Execution getLatestExecution(@PathVariable("id") String id) {
-        logger.info("Fetching latest execution for test case ID: {}", id);
-        return executionService.getLatestExecutionByTestCase(id);
+    public ResponseEntity<Execution> getLatestExecution(@PathVariable("id") String id) {
+        log.info("Fetching latest execution for test case ID: {}", id);
+        Execution execution = executionService.getLatestExecutionByTestCase(id);
+        if (execution == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(execution);
     }
 
     @GetMapping("/executions/{id}")
     public ResponseEntity<Object> getExecutionDetails(@PathVariable("id") String id) {
-        logger.info("Fetching execution details for ID: {}", id);
+        log.info("Fetching execution details for ID: {}", id);
         return executionRepo.findById(id).map(execution -> {
             List<ExecutionStep> steps = executionStepRepo.findByExecutionIdOrderByStepOrderAsc(id);
-            java.util.Map<String, Object> response = new java.util.HashMap<>();
+            Map<String, Object> response = new HashMap<>();
             response.put("execution", execution);
             response.put("steps", steps);
             return ResponseEntity.ok((Object) response);
@@ -143,16 +178,16 @@ public class TestController {
     }
 
     @GetMapping("/video/{executionId}/{filename}")
-    public ResponseEntity<org.springframework.core.io.Resource> getVideo(
+    public ResponseEntity<Resource> getVideo(
             @PathVariable("executionId") String executionId,
             @PathVariable("filename") String filename) {
         try {
-            java.nio.file.Path videoPath = java.nio.file.Paths.get("src/main/resources/static/screenshots", executionId,
+            Path videoPath = Paths.get("src/main/resources/static/screenshots", executionId,
                     filename);
-            org.springframework.core.io.Resource resource = new org.springframework.core.io.UrlResource(
+            Resource resource = new UrlResource(
                     videoPath.toUri());
             return ResponseEntity.ok()
-                    .contentType(org.springframework.http.MediaType.parseMediaType("video/webm"))
+                    .contentType(MediaType.parseMediaType("video/webm"))
                     .body(resource);
         } catch (Exception e) {
             return ResponseEntity.notFound().build();
@@ -160,15 +195,15 @@ public class TestController {
     }
 
     @GetMapping("/screenshots/{executionId}/{filename}")
-    public ResponseEntity<org.springframework.core.io.Resource> getScreenshot(
+    public ResponseEntity<Resource> getScreenshot(
             @PathVariable("executionId") String executionId,
             @PathVariable("filename") String filename) {
         try {
-            java.nio.file.Path path = java.nio.file.Paths.get("src/main/resources/static/screenshots", executionId,
+            Path path = Paths.get("src/main/resources/static/screenshots", executionId,
                     filename);
-            org.springframework.core.io.Resource resource = new org.springframework.core.io.UrlResource(path.toUri());
+            Resource resource = new UrlResource(path.toUri());
             return ResponseEntity.ok()
-                    .contentType(org.springframework.http.MediaType.IMAGE_PNG)
+                    .contentType(MediaType.IMAGE_PNG)
                     .body(resource);
         } catch (Exception e) {
             return ResponseEntity.notFound().build();

@@ -1,53 +1,128 @@
 package com.lumitest.service;
 
-import com.microsoft.playwright.*;
-import com.lumitest.model.*;
+import com.microsoft.playwright.Playwright;
+import com.microsoft.playwright.BrowserContext;
+import com.microsoft.playwright.BrowserType;
+import com.microsoft.playwright.Page;
+import com.microsoft.playwright.PlaywrightException;
+import com.lumitest.model.RecordingSession;
+import com.lumitest.model.RecorderEvent;
+import com.lumitest.model.TestStep;
+import com.lumitest.model.TestCase;
+import com.lumitest.config.LumiTestConfig;
 import com.lumitest.repository.TestCaseRepository;
 import com.lumitest.repository.TestStepRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.lumitest.util.HeuristicUtils;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.Map;
-
-import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class RecorderService {
 
-    @Autowired
-    private StepBuilderService stepBuilderService;
+    private final StepBuilderService stepBuilderService;
 
-    @Autowired
-    private TestCaseRepository testCaseRepo;
+    private final TestCaseRepository testCaseRepo;
 
-    @Autowired
-    private TestStepRepository testStepRepo;
+    private final TestStepRepository testStepRepo;
 
-    @Autowired
-    private ElementLibraryService elementLibraryService;
+    private final ElementLibraryService elementLibraryService;
+
+    private final LumiTestConfig config;
 
     private final Map<String, RecordingSession> sessions = new ConcurrentHashMap<>();
-    private final Map<String, Browser> browsers = new ConcurrentHashMap<>();
+    private final Map<String, Page> sessionPages = new ConcurrentHashMap<>();
 
-    public RecordingSession start(String targetUrl) {
+    private Playwright playwright;
+    private BrowserContext persistentContext;
+
+    private synchronized BrowserContext getOrCreateContext() {
+        if (playwright == null) {
+            playwright = Playwright.create();
+        }
+        if (persistentContext == null) {
+            try {
+                BrowserType.LaunchPersistentContextOptions options = new BrowserType.LaunchPersistentContextOptions()
+                        .setHeadless(config.getRecorder().isHeadless())
+                        .setChannel(config.getRecorder().getBrowser())
+                        .setSlowMo(config.getRecorder().getDelayMs())
+                        .setArgs(Arrays.asList("--no-sandbox", "--disable-setuid-sandbox"));
+
+                Path path = Paths.get(config.getRecorder().getSessionPath())
+                        .toAbsolutePath();
+                log.info("🚀 Launching {} with persistent context at: {}", config.getRecorder().getBrowser(), path);
+
+                persistentContext = playwright.chromium().launchPersistentContext(path, options);
+            } catch (Exception e) {
+                log.error("❌ Failed to launch browser: {}", e.getMessage());
+                // Try small cleanup if it looks like a lock issue
+                try {
+                    Path lockFile = Paths.get(config.getRecorder().getSessionPath(),
+                            "SingletonLock");
+                    if (Files.exists(lockFile)) {
+                        log.warn("Found SingletonLock, attempting to remove...");
+                        Files.delete(lockFile);
+                    }
+                } catch (Exception ignored) {
+                }
+                throw e;
+            }
+        }
+        return persistentContext;
+    }
+
+    public RecordingSession start(String targetUrl, String name, String description, String preconditions) {
         String sessionId = UUID.randomUUID().toString().substring(0, 8);
         RecordingSession session = new RecordingSession();
         session.setId(sessionId);
         session.setTargetUrl(targetUrl);
+        session.setName(name != null ? name : "Recorded Test " + sessionId);
+        session.setDescription(description);
+        session.setPreconditions(preconditions);
         session.setActive(true);
         sessions.put(sessionId, session);
 
-        // Run Playwright in a background thread or manage carefully
+        // Run Playwright interaction in a background thread
         new Thread(() -> {
-            try (Playwright playwright = Playwright.create()) {
-                Browser browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(false));
-                browsers.put(sessionId, browser);
+            try {
+                BrowserContext context;
+                try {
+                    context = getOrCreateContext();
+                } catch (Exception e) {
+                    log.error("Could not obtain browser context", e);
+                    session.setActive(false);
+                    return;
+                }
 
-                BrowserContext context = browser.newContext();
-                Page page = context.newPage();
+                Page page;
+                try {
+                    page = context.newPage();
+                } catch (com.microsoft.playwright.PlaywrightException e) {
+                    log.warn("Existing context is broken, attempting recovery...");
+                    // Reset context and retry once
+                    resetSession();
+                    try {
+                        context = getOrCreateContext();
+                        page = context.newPage();
+                    } catch (Exception e2) {
+                        log.error("Full recovery failed", e2);
+                        session.setActive(false);
+                        return;
+                    }
+                }
+                sessionPages.put(sessionId, page);
 
                 // Expose function to receive events
                 page.exposeBinding("recorderPostEvent", (source, args) -> {
@@ -57,24 +132,33 @@ public class RecorderService {
                     return null;
                 });
 
-                // Inject sophisticated recording script covering all components
+                // Inject sophisticated recording script
                 try {
-                    byte[] scriptBytes = new org.springframework.core.io.ClassPathResource("recorder.js")
+                    byte[] scriptBytes = new ClassPathResource("recorder.js")
                             .getInputStream().readAllBytes();
-                    page.addInitScript(new String(scriptBytes, java.nio.charset.StandardCharsets.UTF_8));
+                    page.addInitScript(new String(scriptBytes, StandardCharsets.UTF_8));
                 } catch (Exception e) {
                     log.error("Failed to load recorder.js", e);
                 }
 
                 page.navigate(targetUrl);
 
-                // Keep browser open until session inactive
+                // Monitoring session status
                 while (session.isActive()) {
+                    if (page.isClosed()) {
+                        session.setActive(false);
+                        break;
+                    }
                     Thread.sleep(1000);
                 }
-                browser.close();
+
+                if (!page.isClosed()) {
+                    page.close();
+                }
+                sessionPages.remove(sessionId);
+
             } catch (Exception e) {
-                e.printStackTrace();
+                log.error("Error in recording session " + sessionId, e);
                 session.setActive(false);
             }
         }).start();
@@ -90,24 +174,27 @@ public class RecorderService {
 
             // Tự động học: Nếu selector là high-priority (ID/TestID), lưu vào Element
             // Library
-            if (com.lumitest.util.HeuristicUtils.isHighPrioritySelector(step.getSelector())) {
-                elementLibraryService.saveElement(session.getTargetUrl(), event.getText(), step.getSelector());
-                log.info("🧠 LumiTest learned: Label [{}] -> Selector [{}]", event.getText(), step.getSelector());
-            }
+            // In business mode, we skip selector-based element library for now
+            // or we could use the label if extracted.
 
-            log.info("Recorded step: {} on {}", step.getAction(), step.getSelector());
+            log.info("Recorded step: {}", step.getDescription());
         }
     }
 
-    public RecordingSession stop(String sessionId, String testCaseName) {
+    public RecordingSession stop(String sessionId) {
         RecordingSession session = sessions.get(sessionId);
         if (session != null) {
             session.setActive(false);
 
+            // Interaction logic in the thread will close the page
+
             // Save to DB
             TestCase testCase = new TestCase();
-            testCase.setName(testCaseName);
-            testCase.setDescription("Recorded from " + session.getTargetUrl());
+            testCase.setName(session.getName());
+            testCase.setDescription(session.getDescription() != null ? session.getDescription()
+                    : "Recorded from " + session.getTargetUrl());
+            testCase.setPreconditions(session.getPreconditions());
+
             testCase = testCaseRepo.save(testCase);
 
             for (TestStep step : session.getSteps()) {
@@ -116,6 +203,23 @@ public class RecorderService {
             }
         }
         return session;
+    }
+
+    public synchronized void resetSession() {
+        try {
+            if (persistentContext != null) {
+                persistentContext.close();
+                persistentContext = null;
+            }
+            if (playwright != null) {
+                playwright.close();
+                playwright = null;
+            }
+            // Clear the directory manually if needed
+            log.info("Browser session reset successfully.");
+        } catch (Exception e) {
+            log.error("Failed to reset browser session", e);
+        }
     }
 
     public RecordingSession getSession(String sessionId) {

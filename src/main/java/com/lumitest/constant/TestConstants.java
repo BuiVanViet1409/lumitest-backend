@@ -20,13 +20,30 @@ public class TestConstants {
         public static final String VERIFY_VALUE = "verify_value";
         public static final String VERIFY_URL_CONTAINS = "verify_url_contains";
         public static final String VERIFY_ELEMENT_EXISTS = "verify_element_exists";
+
+        // API Testing Actions
+        public static final String API_GET = "api_get";
+        public static final String API_POST = "api_post";
+        public static final String API_PUT = "api_put";
+        public static final String API_DELETE = "api_delete";
     }
 
     public static class Status {
-        public static final String PASS = "PASS";
-        public static final String FAIL = "FAIL";
-        public static final String RUNNING = "RUNNING";
+        public static final String NOT_RUN = "NOT_RUN";
         public static final String PASSED = "PASSED";
         public static final String FAILED = "FAILED";
+        public static final String BLOCKED = "BLOCKED";
+
+        // Legacy support (to be removed later)
+        public static final String PASS = "PASSED";
+        public static final String FAIL = "FAILED";
+        public static final String RUNNING = "RUNNING";
+    }
+
+    public static class VerificationType {
+        public static final String UI = "UI";
+        public static final String API = "API";
+        public static final String DATABASE = "DATABASE";
+        public static final String MESSAGE = "MESSAGE";
     }
 }

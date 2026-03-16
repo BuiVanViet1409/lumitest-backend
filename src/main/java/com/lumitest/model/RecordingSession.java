@@ -8,6 +8,9 @@ import java.util.List;
 public class RecordingSession {
     private String id;
     private String targetUrl;
+    private String name;
+    private String description;
+    private String preconditions;
     private List<TestStep> steps = new ArrayList<>();
     private boolean active;
 }
