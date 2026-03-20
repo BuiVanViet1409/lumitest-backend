@@ -25,6 +25,11 @@ spring:
   data:
     mongodb:
       uri: mongodb://localhost:27017/lumitest
+  datasource:
+    url: jdbc:postgresql://localhost:5432/postgres
+    username: postgres
+    password: password
+    driver-class-name: org.postgresql.Driver
   task:
     execution:
       pool:
