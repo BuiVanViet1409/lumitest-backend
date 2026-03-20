@@ -141,15 +141,23 @@ public class TestController {
 
     // --- EXECUTION ---
     @PostMapping("/testcases/{id}/run")
-    public ResponseEntity<Execution> runTest(@PathVariable("id") String id) {
-        log.info("Running test case ID: {}", id);
+    public ResponseEntity<Execution> runTest(
+            @PathVariable("id") String id,
+            @RequestBody(required = false) Map<String, String> options) {
+        log.info("Running test case ID: {} with options: {}", id, options);
         TestCase testCase = testCaseService.getById(id);
 
         Execution execution = new Execution();
         execution.setTestCaseId(id);
         execution.setStatus("PENDING");
+        
+        if (options != null) {
+            execution.setEnvironment(options.get("environment"));
+            execution.setConfigProfile(options.get("configProfile"));
+            execution.setTestDataProfile(options.get("testDataProfile"));
+        }
+        
         execution = executionRepo.save(execution);
-
         executionService.runTest(testCase, execution);
 
         return ResponseEntity.ok(execution);

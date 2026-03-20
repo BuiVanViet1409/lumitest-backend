@@ -21,4 +21,9 @@ public class Execution {
     private LocalDateTime endTime;
     private String videoPath; // Đường dẫn đến file video .webm
     private String progressMessage; // Log gần nhất để UI hiển thị tiến độ
+    
+    // --- Enterprise Extension ---
+    private String environment; // DEV / SIT / UAT / PROD
+    private String configProfile;
+    private String testDataProfile;
 }

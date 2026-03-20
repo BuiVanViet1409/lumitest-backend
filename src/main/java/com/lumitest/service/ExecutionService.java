@@ -66,7 +66,16 @@ public class ExecutionService {
             page.setDefaultTimeout(config.getTimeouts().getGlobal());
             boolean allPassed = true;
 
-            log.info("🚀 Starting test execution for: {}", testCase.getName());
+            log.info("🚀 Starting test execution for: {} [Env: {}]", testCase.getName(), execution.getEnvironment());
+            
+            // Environment Binding Logic
+            // In a real enterprise app, we might switch baseURL or API keys here
+            if (execution.getEnvironment() != null) {
+                log.info("🌐 Binding execution to {} environment profiles: Configuration={}, TestData={}", 
+                         execution.getEnvironment(), 
+                         execution.getConfigProfile() != null ? execution.getConfigProfile() : "DEFAULT",
+                         execution.getTestDataProfile() != null ? execution.getTestDataProfile() : "DEFAULT");
+            }
 
             for (int i = 0; i < steps.size(); i++) {
                 TestStep step = steps.get(i);
@@ -76,6 +85,7 @@ public class ExecutionService {
                 execution.setProgressMessage(msg);
                 executionRepo.save(execution);
 
+                @SuppressWarnings("null")
                 ExecutionStep execStep = runner.executeStep(page, step, execution.getId());
                 executionStepRepo.save(execStep);
 

@@ -1,5 +1,6 @@
 package com.lumitest.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lumitest.dto.QAResponse;
 import com.lumitest.dto.QATestCase;
 import com.lumitest.dto.QATestStep;
@@ -26,7 +27,7 @@ public class QAAssistantController {
 
     private final QAAssistantService qaAssistantService;
     private final TestCaseService testCaseService;
-    private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper;
 
     /**
      * Endpoint to analyze a ticket and generate test cases.

@@ -23,6 +23,21 @@ public class TestCase {
     private String scenario;
     private String folder;
     private String acceptanceCriteriaMapping;
+    
+    // --- Enterprise Extension ---
+    private String externalRequirementId; // Links to Jira/Notion
+    private List<String> defectIds;
+    
+    private String riskLevel; // HIGH / MEDIUM / LOW
+    private String priority;  // P0 / P1 / P2
+    private String businessImpact;
+    
+    private String author;
+    private String reviewer;
+    private String approvalStatus; // DRAFT / IN_REVIEW / APPROVED
+    
+    private String releaseId;
+    
     private LocalDateTime createdAt = LocalDateTime.now();
 
     @org.springframework.data.annotation.Transient
